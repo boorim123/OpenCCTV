@@ -56,7 +56,10 @@ src/main.d: ../src/main.cpp ../src/opencctv/ServerController.hpp \
  ../src/opencctv/db/../../analytic/AnalyticResult.hpp \
  ../src/opencctv/db/StreamGateway.hpp \
  ../src/opencctv/db/AnalyticInstanceStreamGateway.hpp \
- ../src/opencctv/db/../dto/AnalyticInstanceStream.hpp
+ ../src/opencctv/db/../dto/AnalyticInstanceStream.hpp \
+ ../src/opencctv/ThreadPool.h ../src/opencctv/ConsumerThread.hpp \
+ ../src/opencctv/ProducerThread.hpp \
+ ../src/opencctv/ResultRouterThread.hpp
 
 ../src/opencctv/ServerController.hpp:
 
@@ -203,3 +206,11 @@ src/main.d: ../src/main.cpp ../src/opencctv/ServerController.hpp \
 ../src/opencctv/db/AnalyticInstanceStreamGateway.hpp:
 
 ../src/opencctv/db/../dto/AnalyticInstanceStream.hpp:
+
+../src/opencctv/ThreadPool.h:
+
+../src/opencctv/ConsumerThread.hpp:
+
+../src/opencctv/ProducerThread.hpp:
+
+../src/opencctv/ResultRouterThread.hpp:

@@ -36,6 +36,7 @@
 #include <signal.h> // to handle terminate signal
 #include "opencctv/db/StreamGateway.hpp"
 #include "opencctv/db/AnalyticInstanceStreamGateway.hpp"
+#include "opencctv/ThreadPool.h"
 
 using namespace std;
 
@@ -46,12 +47,14 @@ void startAllAnalytic();
 void kilAllAnalytic();
 int startAanalyticById(unsigned int);
 
-boost::thread_group _producerThreadGroup;
-boost::thread_group _consumerThreadGroup;
-boost::thread_group _resultsRouterThreadGroup;
+//boost::thread_group _producerThreadGroup;
+//boost::thread_group _consumerThreadGroup;
+//boost::thread_group _resultsRouterThreadGroup;
 
 opencctv::util::Config* pConfig ;
 opencctv::ApplicationModel* pModel ;
+
+opencctv::ThreadPool* pThreadPool;
 
 int main(int argc, char* argv[]) {
 
@@ -186,16 +189,10 @@ void exitHandler(int iSignum) {
 	}
 
 
-	// kill all thread
+	// pThreadPool = opencctv::ThreadPool::getInstance();
 
-		//_producerThreadGroup.
-	//_producerThreadGroup.interrupt_all();
-	//_consumerThreadGroup.interrupt_all();
-
-	//_resultsRouterThreadGroup.interrupt_all();
-
-
-
+	// pThreadPool->interruptAll();
+	// pThreadPool->joinAll();
 
 	exit(iSignum);
 
@@ -234,9 +231,14 @@ void kilAllAnalytic() {
 				"Reset all the Analytic Servers.");
 	}
 
-	cout << "Size of Result" << _resultsRouterThreadGroup.size() << endl;
-	cout << "Size of Result" << _producerThreadGroup.size() << endl;
-	cout << "Size of Result" << _consumerThreadGroup.size() << endl;
+	//cout << "Size of Result" << _resultsRouterThreadGroup.size() << endl;
+	//cout << "Size of Result" << _producerThreadGroup.size() << endl;
+	//cout << "Size of Result" << _consumerThreadGroup.size() << endl;
+
+	pThreadPool = opencctv::ThreadPool::getInstance();
+
+	pThreadPool->interruptAll();
+	pThreadPool->joinAll();
 
 
 }
@@ -263,11 +265,9 @@ void startAllAnalytic() {
 	//test::gateway::TestAnalyticInstanceStreamGateway analyticInstanceGateway;
 	opencctv::db::AnalyticInstanceStreamGateway* pAnalyticInstanceGateway = NULL;
 	try {
-		pAnalyticInstanceGateway =
-				new opencctv::db::AnalyticInstanceStreamGateway();
+		pAnalyticInstanceGateway = new opencctv::db::AnalyticInstanceStreamGateway();
 	} catch (opencctv::Exception &e) {
-		std::string sErrMsg =
-				"Failed to create AnalyticInstanceStreamGateway -  ";
+		std::string sErrMsg = "Failed to create AnalyticInstanceStreamGateway -  ";
 		sErrMsg.append(e.what());
 		opencctv::util::log::Loggers::getDefaultLogger()->error(sErrMsg);
 		//return -1;
@@ -474,6 +474,9 @@ void startAllAnalytic() {
 						pVmsConnector);
 			}
 		}
+
+		pThreadPool = opencctv::ThreadPool::getInstance();
+
 		if (pQueue && pConsumer && pProducer) {
 			// Create and start Results Router threads
 			for (size_t j = 0; j < vAnalyticInstances.size(); ++j) {
@@ -485,20 +488,28 @@ void startAllAnalytic() {
 
 					boost::thread* pResultsRouterThread = new boost::thread(*pResultsRouter);
 
-					if (pResultsRouterThread->joinable()) {
-						_resultsRouterThreadGroup.add_thread(pResultsRouterThread);
-					}
+					//if (pResultsRouterThread->joinable()) {
+					//	_resultsRouterThreadGroup.add_thread(pResultsRouterThread);
+					//}
+
+					pThreadPool->setResultRouterThreadManagers(1,pResultsRouterThread);
 				}
 			}
+
 			// Start Consumer and Producer threads
 			boost::thread* pConsumerThread = new boost::thread(*pConsumer);
 			if (pConsumerThread->joinable()) {
+
+				pThreadPool->setConsumerThreadManagers(1,pConsumerThread);
+
 				boost::thread* pProducerThread = new boost::thread(*pProducer);
 				if (pProducerThread->joinable()) {
 
-					pConsumerThread->
-					_consumerThreadGroup.add_thread(pConsumerThread);
-					_producerThreadGroup.add_thread(pProducerThread);
+
+					pThreadPool->setProducerThreadManagers(1,pProducerThread);
+
+					//_consumerThreadGroup.add_thread(pConsumerThread);
+					//_producerThreadGroup.add_thread(pProducerThread);
 				}
 			}
 		}
@@ -545,11 +556,11 @@ int startAanalyticById(unsigned int analyticInstanceId) {
 	analytic::AnalyticInstanceManager* pAnalyticInstanceManager =
 			new analytic::AnalyticInstanceManager(
 					pConfig->get(opencctv::util::PROPERTY_ANALYTIC_SERVER_IP),
-					pConfig->get(
-							opencctv::util::PROPERTY_ANALYTIC_SERVER_PORT));
+					pConfig->get(opencctv::util::PROPERTY_ANALYTIC_SERVER_PORT));
+
 	pModel->getAnalyticInstanceManagers()[1] = pAnalyticInstanceManager;
-	opencctv::util::log::Loggers::getDefaultLogger()->info(
-			"Initializing variables done.");
+
+	opencctv::util::log::Loggers::getDefaultLogger()->info("Initializing variables done.");
 
 	std::vector<opencctv::dto::Stream> vStreams;
 	try {
@@ -758,21 +769,21 @@ int startAanalyticById(unsigned int analyticInstanceId) {
 									analyticInstance.getAnalyticInstanceId());
 					boost::thread* pResultsRouterThread = new boost::thread(
 							*pResultsRouter);
-					if (pResultsRouterThread->joinable()) {
+					//if (pResultsRouterThread->joinable()) {
 
-						_resultsRouterThreadGroup.add_thread(
-								pResultsRouterThread);
-					}
+					//	_resultsRouterThreadGroup.add_thread(
+						//		pResultsRouterThread);
+					//}
 				}
 			}
 			// Start Consumer and Producer threads
 			boost::thread* pConsumerThread = new boost::thread(*pConsumer);
 			if (pConsumerThread->joinable()) {
 				boost::thread* pProducerThread = new boost::thread(*pProducer);
-				if (pProducerThread->joinable()) {
-					_consumerThreadGroup.add_thread(pConsumerThread);
-					_producerThreadGroup.add_thread(pProducerThread);
-				}
+				//if (pProducerThread->joinable()) {
+					//_consumerThreadGroup.add_thread(pConsumerThread);
+					//_producerThreadGroup.add_thread(pProducerThread);
+				//}
 			}
 		}
 	}

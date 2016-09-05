@@ -27,7 +27,9 @@ void ProducerThread::operator ()()
 		opencctv::util::log::Loggers::getDefaultLogger()->info("Producer Thread started.");
 		try
 		{
-			_pVmsConn->produceImageObjects(_pQueue);
+
+				_pVmsConn->produceImageObjects(_pQueue);
+			 // when interrupted by thread
 		}
 		catch(std::exception &e)
 		{
@@ -53,5 +55,13 @@ bool ProducerThread::isStillRunning()
 	}
 	return (bVmsConnectorIsActive && _bActive);
 }
+
+ProducerThread::~ProducerThread(){
+
+	std::cout << "VmsConnector (parent): destructure called" << std::endl;
+
+
+}
+
 
 } /* namespace opencctv */

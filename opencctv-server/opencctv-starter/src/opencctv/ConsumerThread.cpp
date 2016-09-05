@@ -23,4 +23,8 @@ void ConsumerThread::operator ()()
 	opencctv::util::log::Loggers::getDefaultLogger()->info("Consumer Thread stopped.");
 }
 
+ConsumerThread::~ConsumerThread(){
+	std::cout << "Consumer destructure called." << std::endl;
+}
+
 } /* namespace opencctv */
